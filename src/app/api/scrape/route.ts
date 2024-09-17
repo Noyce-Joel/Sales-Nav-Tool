@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const browser = await puppeteer.launch({
       headless: false,
       slowMo: 20,
-      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      executablePath: '/Applications/Google Chrome.app',
       defaultViewport: null,
     });
 
