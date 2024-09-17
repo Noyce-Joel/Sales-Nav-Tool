@@ -26,14 +26,15 @@ export async function POST(request: Request) {
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       slowMo: 20,
       args: [
         '--no-sandbox',            // Disables the sandbox, necessary in certain environments (e.g., Docker)
         '--disable-setuid-sandbox',// Helps to avoid permission issues
-        
+
+        '--disable-renderer-backgrounding', // Keeps renderers active even if backgrounded
     ],
-      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      
       defaultViewport: null,
   });
   
