@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Dialog, DialogHeader, DialogTrigger } from "../ui/dialog";
-import Image from "next/image";
-import { LinkedinIcon } from "lucide-react";
-import { DialogContent, DialogTitle } from "@radix-ui/react-dialog";
+import React, { useState } from "react";
+import { DialogHeader } from "../ui/dialog";
+import { DialogTitle } from "@radix-ui/react-dialog";
 import { Input } from "../ui/input";
-import { useUser } from "@clerk/nextjs";
 import { Button } from "../ui/button";
 
 
