@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
         '--disable-renderer-backgrounding', // Keeps renderers active even if backgrounded
     ],
-      
+      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
       defaultViewport: null,
   });
   
