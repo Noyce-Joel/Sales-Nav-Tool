@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
+import chromium from '@sparticuz/chromium-min';
+
+chromium.setHeadlessMode = true;
 
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
@@ -27,17 +30,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const isLocal = !!process.env.CHROME_EXECUTABLE_PATH
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
-      headless: true,
-      slowMo: 20,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-renderer-backgrounding",
-      ],
+      args: isLocal ? puppeteer.defaultArgs() : [...chromium.args, '--hide-scrollbars', '--incognito', '--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath('https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar'),
+      headless: chromium.headless,
     });
+
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
