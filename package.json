@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "postinstall": "npx puppeteer install"
+    "postinstall": "npx puppeteer browsers install"
+
   },
   "dependencies": {
     "@clerk/nextjs": "^5.5.3",
