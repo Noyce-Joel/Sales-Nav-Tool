@@ -22,7 +22,6 @@ export type NewSearchProps = {
     location: string;
     company: string;
     title: string;
-    followingCompany: boolean;
     sessionCookie: string;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

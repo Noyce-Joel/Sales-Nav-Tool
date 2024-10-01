@@ -7,6 +7,10 @@ import { Connection } from "@/lib/types";
 import chromium from '@sparticuz/chromium-min';
 
 
+
+export async function POST(request: Request) {
+  chromium.setHeadlessMode = true;
+
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
 };
@@ -18,23 +22,7 @@ const sendProfileName = (name: string) => {
 const sendConnectionsToClient = (connection: Connection) => {
   pusher.trigger("connections-channel", "connection", { connection });
 };
-
-export async function POST(request: Request) {
-  chromium.setHeadlessMode = true;
-  let data;
-  let sessionCookie = "";
-  try {
-    const body = await request.json();
-    data = body.data;
-    sessionCookie = body.sessionCookie;
-  } catch (error) {
-    console.error("Error parsing JSON:", error);
-    return NextResponse.json(
-      { error: "Invalid JSON in request body" },
-      { status: 400 }
-    );
-  }
- 
+  const { data, sessionCookie } = await request.json();
   console.log("profile data", data);
   if (!data.url) {
     return NextResponse.json(

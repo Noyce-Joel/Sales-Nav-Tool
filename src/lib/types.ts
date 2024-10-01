@@ -29,7 +29,6 @@ export type FormData = {
   location: string;
   company: string;
   title: string;
-  followingCompany: boolean;
   sessionCookie: string;
 };
 
