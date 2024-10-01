@@ -6,7 +6,7 @@ import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
 import chromium from '@sparticuz/chromium-min';
 
-
+export const runtime = 'edge';
 
 export async function POST(request: Request) {
   chromium.setHeadlessMode = true;
