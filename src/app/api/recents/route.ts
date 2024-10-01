@@ -32,7 +32,9 @@ export async function POST(request: Request) {
 
   const isLocal = !!process.env.CHROME_EXECUTABLE_PATH
   try {
+    
     let browser
+
     try {
       sendLogToClient("Launching browser");
        browser = await puppeteer.launch({
