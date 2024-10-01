@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
-import chromium from 'chrome-aws-lambda';
+import chromium from '@sparticuz/chromium-min';
+
+chromium.setHeadlessMode = true;
 
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
@@ -28,15 +30,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const isLocal = !!process.env.CHROME_EXECUTABLE_PATH
   try {
     sendLogToClient("Launching browser");
-    const browser = await chromium.puppeteer.launch({
-      args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+    const browser = await puppeteer.launch({
+      args: isLocal ? puppeteer.defaultArgs() : [...chromium.args, '--hide-scrollbars', '--incognito', '--no-sandbox', '--disable-setuid-sandbox'],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: true,
-
-    })
+      executablePath: process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath('https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar'),
+      headless: chromium.headless,
+    });
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
