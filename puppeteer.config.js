@@ -10,13 +10,8 @@ module.exports = {
     skipDownload: false,  // Ensure Chrome is downloaded if not already
   },
   
-  // If you want to support Firefox (cross-browser testing)
-  firefox: {
-    skipDownload: true,  // You can set this to false to download Firefox too
-  },
-  
   // Customize the cache directory (helpful for environments with build steps)
-  cacheDirectory: join(__dirname, '.cache', 'puppeteer'),
+  cacheDirectory: '/home/sbx_user1051/.cache/puppeteer',
 
   // Optional: You could set default args or env settings if needed
 };
