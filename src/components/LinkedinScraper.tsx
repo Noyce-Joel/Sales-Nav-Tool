@@ -248,7 +248,7 @@ export default function LinkedInScraper() {
         <ResizablePanel defaultSize={55}>
           <Card className="w-full h-full overflow-y-scroll hide-scrollbars">
             <CardContent className="p-[1.2rem] h-auto z-50">
-              <Connections profiles={selectedProfile?.connections} />
+              <Connections profiles={selectedProfile?.recents} />
             </CardContent>
           </Card>
         </ResizablePanel>

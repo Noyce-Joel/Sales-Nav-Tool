@@ -19,7 +19,7 @@ const sendConnectionsToClient = (connection: Connection) => {
   pusher.trigger("connections-channel", "connection", { connection });
 };
 
-export async function POST(request: Request) {
+export async function POST (request: Request) {
   const { profileUrl, location, company, sessionCookie, title } =
     await request.json();
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   const isLocal = !!process.env.CHROME_EXECUTABLE_PATH
-  
+
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({

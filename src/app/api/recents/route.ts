@@ -32,13 +32,28 @@ export async function POST(request: Request) {
 
   const isLocal = !!process.env.CHROME_EXECUTABLE_PATH
   try {
-    sendLogToClient("Launching browser");
-    const browser = await puppeteer.launch({
-      args: isLocal ? puppeteer.defaultArgs() : [...chromium.args, '--hide-scrollbars', '--incognito', '--no-sandbox', '--disable-setuid-sandbox'],
-      defaultViewport: chromium.defaultViewport,
-      executablePath: process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath('https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar'),
-      headless: chromium.headless,
-    });
+    let browser
+    try {
+      sendLogToClient("Launching browser");
+       browser = await puppeteer.launch({
+        args: isLocal ? puppeteer.defaultArgs() : [...chromium.args, '--hide-scrollbars', '--incognito', '--no-sandbox', '--disable-setuid-sandbox'],
+        defaultViewport: chromium.defaultViewport,
+        executablePath: process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath('https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar'),
+        headless: chromium.headless,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error launching browser:", error);
+        sendLogToClient(`Error launching browser: ${error.message}`);
+      } else {
+        console.error("Error launching browser:", error);
+        sendLogToClient("Error launching browser: An unknown error occurred");
+      }
+      return NextResponse.json(
+        { error: "Failed to launch browser" },
+        { status: 500 }
+      );
+    }
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
@@ -314,7 +329,7 @@ export async function POST(request: Request) {
             }
           }, profileIndex);
 
-          await new Promise((resolve) => setTimeout(resolve, 400));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
           const leadData = await page.evaluate((index) => {
             const item = document.querySelectorAll("li.artdeco-list__item")[
