@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
-
+import chromium from "@sparticuz/chromium";
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
 };
@@ -30,14 +30,10 @@ export async function POST(request: Request) {
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
-      headless: true,
-      slowMo: 20,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-renderer-backgrounding",
-      ],
-      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath('https://<Bucket Name>.s3.amazonaws.com/chromium-v126.0.0-pack.tar'),
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
