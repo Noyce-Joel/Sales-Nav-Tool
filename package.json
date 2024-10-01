@@ -9,7 +9,6 @@
     "lint": "next lint",
     "test": "jest",
     "postinstall": "npx puppeteer browsers install chrome"
-
   },
   "dependencies": {
     "@clerk/nextjs": "^5.5.3",

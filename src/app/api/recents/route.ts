@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath,
       headless: true,
-
+      acceptInsecureCerts: true,
     })
 
     const page = await browser.newPage();
