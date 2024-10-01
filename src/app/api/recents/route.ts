@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import puppeteer from "puppeteer-core";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
-import chromium from '@sparticuz/chromium-min';
+import chromium from "@sparticuz/chromium-min";
 
 chromium.setHeadlessMode = true;
 
@@ -30,36 +30,34 @@ export async function POST(request: Request) {
     );
   }
 
-  const isLocal = !!process.env.CHROME_EXECUTABLE_PATH
+  const isLocal = !!process.env.CHROME_EXECUTABLE_PATH;
+
   try {
-
-    let browser
-
-    try {
-      sendLogToClient("Launching browser");
-       browser = await puppeteer.launch({
-        args: isLocal ? puppeteer.defaultArgs() : [...chromium.args, '--hide-scrollbars', '--incognito', '--no-sandbox', '--disable-setuid-sandbox'],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath('https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar'),
-        headless: chromium.headless,
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error launching browser:", error);
-        sendLogToClient(`Error launching browser: ${error.message}`);
-      } else {
-        console.error("Error launching browser:", error);
-        sendLogToClient("Error launching browser: An unknown error occurred");
-      }
-      return NextResponse.json(
-        { error: "Failed to launch browser" },
-        { status: 500 }
-      );
-    }
+    sendLogToClient("Launching browser");
+    const browser = await puppeteer.launch({
+      args: isLocal
+        ? puppeteer.defaultArgs()
+        : [
+            ...chromium.args,
+            "--hide-scrollbars",
+            "--incognito",
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+          ],
+      defaultViewport: chromium.defaultViewport,
+      executablePath:
+        process.env.CHROME_EXECUTABLE_PATH ||
+        (await chromium.executablePath(
+          "https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar"
+        )),
+      headless: chromium.headless,
+    });
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
-    
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    );
 
     sendLogToClient("Setting LinkedIn session cookie");
     const cookies = [
