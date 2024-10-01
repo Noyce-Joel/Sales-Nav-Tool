@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
+import chromium from 'chrome-aws-lambda';
 
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
@@ -29,16 +30,13 @@ export async function POST(request: Request) {
 
   try {
     sendLogToClient("Launching browser");
-    const browser = await puppeteer.launch({
+    const browser = await chromium.puppeteer.launch({
+      args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
       headless: true,
-      slowMo: 20,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-renderer-backgrounding",
-      ],
 
-    });
+    })
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
