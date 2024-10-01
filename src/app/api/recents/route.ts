@@ -6,7 +6,9 @@ import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
 import chromium from '@sparticuz/chromium-min';
 
-chromium.setHeadlessMode = true;
+
+
+
 
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
@@ -21,6 +23,7 @@ const sendConnectionsToClient = (connection: Connection) => {
 };
 
 export async function POST(request: Request) {
+  chromium.setHeadlessMode = true;
   const { data, sessionCookie } = await request.json();
   console.log("profile data", data);
   if (!data.url) {
