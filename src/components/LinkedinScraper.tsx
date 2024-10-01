@@ -182,7 +182,7 @@ export default function LinkedInScraper() {
   };
 
   return (
-    <div className="h-[100vh] relative w-full duration-500 flex gap-3 p-4 ">
+    <div className="h-full relative w-full duration-500 flex gap-3 p-4 ">
       <ResizablePanelGroup direction="horizontal" className="gap-2 ">
         <ResizablePanel defaultSize={45} minSize={35} maxSize={50}>
           <div className="flex flex-row justify-between">
@@ -236,9 +236,9 @@ export default function LinkedInScraper() {
               </Card>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={52}>
-              <Card className="hide-scrollbars h-full flex">
-                <CardContent className="p-[1.2rem] flex h-full overflow-y-scroll ">
+            <ResizablePanel defaultSize={52} className="">
+              <Card className="hide-scrollbars">
+                <CardContent className="p-[1.2rem] ">
                   <Logs logs={logs} />
                 </CardContent>
               </Card>

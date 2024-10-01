@@ -32,7 +32,7 @@ export default function Logs({ logs }: { logs: string[] }) {
 
   return (
     
-      <ul className="space-y-2 pt-4 h-full flex flex-col font-mono rounded-lg max-w-3xl mx-auto">
+      <ul className="space-y-2 pt-4 font-mono rounded-lg max-w-3xl mx-auto">
         {logs
           .filter((log) => !log.startsWith("Total"))
           .map((log, index) => (
