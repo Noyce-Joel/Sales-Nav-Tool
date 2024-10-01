@@ -36,12 +36,7 @@ export async function POST(request: Request) {
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-renderer-backgrounding",
-
-        "--enter-fullscreen",
       ],
-      executablePath:
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      defaultViewport: null,
     });
 
     const page = await browser.newPage();
