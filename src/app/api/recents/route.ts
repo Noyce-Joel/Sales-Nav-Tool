@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       slowMo: 20,
       args: [
         "--no-sandbox",
