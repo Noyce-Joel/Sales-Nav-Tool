@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 
 export default function Logs({ logs }: { logs: string[] }) {
   const controls = useAnimation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [totalResult, setTotalResult] = useState<number | null>(null);
 
   useEffect(() => {
     controls.start((i) => ({
@@ -19,30 +20,48 @@ export default function Logs({ logs }: { logs: string[] }) {
     }
   }, [logs, controls]);
 
+  useEffect(() => {
+    logs.forEach((log) => {
+      const totalMatch = log.match(/Total\s*:\s*(\d+)/);
+      if (totalMatch) {
+        const newTotal = parseInt(totalMatch[1], 10);
+        setTotalResult(newTotal);
+      }
+    });
+  }, [logs]);
+
   return (
-    <div className="font-mono rounded-lg  max-w-3xl mx-auto">
-      
-      <div
-        ref={scrollRef}
-        className=" flex "
-      >
-        <ul className="space-y-2 pt-4">
-          {logs.map((log, index) => (
+    
+      <ul className="space-y-2 pt-4 h-full flex flex-col font-mono rounded-lg max-w-3xl mx-auto">
+        {logs
+          .filter((log) => !log.startsWith("Total"))
+          .map((log, index) => (
             <motion.li
               key={index}
               custom={index}
               initial={{ opacity: 0, y: 20 }}
               animate={controls}
-              className={`flex items-start ${
+              className={`flex items-center ${
                 index === logs.length - 1 ? "animate-pulse" : ""
               }`}
             >
-              <span className="text-yellow-500 mr-2">$</span>
-              <span>{log}</span>
+              <span className="text-yellow-500 mr-2 ">$</span>
+              <span className="text-sm ">{log}</span>
             </motion.li>
           ))}
-        </ul>
-      </div>
-    </div>
+
+        {totalResult !== null && (
+          <motion.li
+            custom={logs.length}
+            initial={{ opacity: 0, y: 20 }}
+            animate={controls}
+            className="flex items-center animate-pulse"
+          >
+            <span className="text-yellow-500 mr-2">$</span>
+            <span className="text-sm">Total: {totalResult}</span>
+          </motion.li>
+        )}
+      </ul>
+
   );
 }

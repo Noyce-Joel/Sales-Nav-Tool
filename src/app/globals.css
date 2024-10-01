@@ -2,3 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+    background-color: #1a4154;
+    color: white;
+    
+}
+
+.border-muted {
+    border-color: #7395a6;
+}
+
+.border {
+    border-color: #4d768b;
+    
+}
+
+.hide-scrollbars {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbars::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+}

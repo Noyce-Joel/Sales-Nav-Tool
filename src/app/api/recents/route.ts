@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
@@ -17,10 +18,9 @@ const sendConnectionsToClient = (connection: Connection) => {
 };
 
 export async function POST(request: Request) {
-  const { profileUrl, location, company, sessionCookie, title } =
-    await request.json();
-
-  if (!profileUrl) {
+  const { data, sessionCookie } = await request.json();
+  console.log("profile data", data);
+  if (!data.url) {
     return NextResponse.json(
       { error: "Profile URL is required" },
       { status: 400 }
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       slowMo: 20,
       args: [
         "--no-sandbox",
@@ -64,7 +64,9 @@ export async function POST(request: Request) {
 
     await page.setCookie(...cookies);
 
-    await page.goto(profileUrl, {
+    sendLogToClient("Login successful, proceeding");
+
+    await page.goto(data.url, {
       waitUntil: "domcontentloaded",
     });
     let profile = "";
@@ -77,8 +79,6 @@ export async function POST(request: Request) {
         }
       );
 
-      sendLogToClient("Login successful, proceeding");
-
       console.log("fetching the name of the profile");
 
       profile = await page.$eval(
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         (element) => element.textContent?.trim() || ""
       );
 
-      sendLogToClient(`Profile: ${profile}`);
+      console.log("Profile Name:", profile);
 
       sendProfileName(profile);
 
@@ -133,13 +133,16 @@ export async function POST(request: Request) {
       timeout: 30000,
     });
 
-    if (location) {
-      await page.type('input[placeholder="Add locations"]', location);
+    if (data.location) {
+      await page.type('input[placeholder="Add locations"]', data.location);
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await page.keyboard.press("ArrowDown");
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Enter");
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await page.keyboard.press("Escape");
     }
 
     await page.locator("form.overflow-y-auto").scroll({
@@ -166,14 +169,17 @@ export async function POST(request: Request) {
       }
     );
 
-    if (company) {
+    if (data.company) {
+      sendLogToClient(`Adding company`);
       await page.type(
         'input[placeholder="Add current companies and account lists"]',
-        company
+        data.company
       );
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Enter");
+      sendLogToClient("Company added");
     } else {
+      sendLogToClient("No company provided, skipping company filter");
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Escape");
     }
@@ -199,8 +205,8 @@ export async function POST(request: Request) {
       timeout: 30000,
     });
 
-    if (title) {
-      await page.type('input[placeholder="Add current titles"]', title);
+    if (data.title) {
+      await page.type('input[placeholder="Add current titles"]', data.title);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Enter");
     } else {
@@ -208,30 +214,11 @@ export async function POST(request: Request) {
       await page.keyboard.press("Escape");
     }
 
-    try {
-      const noLeadsMessage = await page.waitForSelector(
-        '::-p-xpath(//h3[contains(text(), "No leads matched your search")])',
-        {
-          visible: true,
-          timeout: 5000,
-        }
-      );
-
-      if (noLeadsMessage) {
-        sendLogToClient("No leads matched your search.");
-        console.log("No leads matched the search.");
-        await browser.close();
-        sendLogToClient("Browser closed");
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(`An error occurred: ${error.message}`);
-      } else {
-        console.error("An unknown error occurred");
-      }
-    }
-
     await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const existingConnections = new Set(
+      data.connections.map((conn: { leadId: string }) => conn.leadId)
+    );
 
     const results: unknown[] = [];
 
@@ -241,98 +228,215 @@ export async function POST(request: Request) {
     let totalResults = 0;
 
     while (hasNextPage) {
+      const noLeads = await page.evaluate(() => {
+        const noLeadsMessage = document.querySelector(
+          "div.illustration-spots-large.empty-room"
+        );
+        return noLeadsMessage ? true : false;
+      });
+
+      if (noLeads) {
+        sendLogToClient(
+          "No more leads matched your search. Scraping complete."
+        );
+        console.log("No leads matched the search.");
+        await browser.close();
+        sendLogToClient("Browser closed");
+        return NextResponse.json({ content: results, profile: profile });
+      }
+
       await page.waitForSelector("ol.artdeco-list", {
         visible: true,
         timeout: 30000,
       });
 
-      let currentResults: unknown[] = [];
+      const currentResults: any[] = [];
+      let itemCount = 0;
       let retryCount = 0;
-      const maxRetries = 5;
+      const maxRetries = 3;
 
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      // Step 1: Scrape all leadIds and filter out those already in the database
+      const allLeadIds = await page.evaluate(() => {
+        const profileNodes = document.querySelectorAll("li.artdeco-list__item");
+        return Array.from(profileNodes)
+          .map((item) => {
+            const leadIdElement = item.querySelector("[data-scroll-into-view]");
+            if (leadIdElement) {
+              const leadIdMatch = leadIdElement
+                .getAttribute("data-scroll-into-view")
+                ?.match(/salesProfile:\(([^)]+)\)/);
+              return leadIdMatch ? leadIdMatch[1] : null;
+            }
+            return null;
+          })
+          .filter((leadId) => leadId !== null);
+      });
 
-      while (currentResults.length < 23 && retryCount < maxRetries) {
-        currentResults = await page.evaluate(() => {
-          const items = Array.from(
-            document.querySelectorAll("li.artdeco-list__item")
-          );
-          return items
-            .map((item) => {
+      const leadIdsToScrape = allLeadIds.filter(
+        (leadId) => leadId && !existingConnections.has(leadId)
+      );
+
+      sendLogToClient(`Found ${leadIdsToScrape.length} new leads to scrape`);
+
+      // Step 2: Scrape details of profiles whose leadIds are not in the database
+      while (currentResults.length < 25 && retryCount < maxRetries) {
+        itemCount = leadIdsToScrape.length;
+
+        for (
+          let i = currentResults.length;
+          i < itemCount && currentResults.length < 25;
+          i++
+        ) {
+          const leadId = leadIdsToScrape[i];
+
+          const profileIndex = await page.evaluate((leadId) => {
+            const profileNodes = document.querySelectorAll(
+              "li.artdeco-list__item"
+            );
+            return Array.from(profileNodes).findIndex((item) => {
               const leadIdElement = item.querySelector(
                 "[data-scroll-into-view]"
               );
-
-              let leadId = null;
               if (leadIdElement) {
                 const leadIdMatch = leadIdElement
                   .getAttribute("data-scroll-into-view")
                   ?.match(/salesProfile:\(([^)]+)\)/);
-                if (leadIdMatch && leadIdMatch[1]) {
-                  leadId = leadIdMatch[1];
-                }
+                return leadIdMatch && leadIdMatch[1] === leadId;
               }
+              return false;
+            });
+          }, leadId);
 
-              if (leadId) {
-                return { leadId }; // Return the leadId object instead of null
-              } else {
-                return null;
-              }
-            })
-            .filter((result) => result !== null); // Filter out any null results
-        });
+          if (profileIndex === -1) continue;
 
-        if (currentResults.length < 23) {
-          sendLogToClient(`Profiles not scraped, retrying...`);
+          await page.evaluate((index) => {
+            const element = document.querySelectorAll("li.artdeco-list__item")[
+              index
+            ];
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, profileIndex);
+
+          await new Promise((resolve) => setTimeout(resolve, 400));
+
+          const leadData = await page.evaluate((index) => {
+            const item = document.querySelectorAll("li.artdeco-list__item")[
+              index
+            ];
+            const nameElement = item.querySelector("span.a11y-text");
+            const locationElement = item.querySelector(
+              "span[data-anonymize='location']"
+            );
+            const companyElement = item.querySelector(
+              "a[data-anonymize='company-name']"
+            );
+            const pictureElement = item.querySelector(
+              "img[data-anonymize='headshot-photo']"
+            );
+            const titleElement = item.querySelector(
+              "span[data-anonymize='title']"
+            );
+            const urlElement = item.querySelector(
+              "a[data-view-name='search-results-lead-name']"
+            );
+            const leadIdElement = item.querySelector("[data-scroll-into-view]");
+
+            let leadId = null;
+            if (leadIdElement) {
+              const leadIdMatch = leadIdElement
+                .getAttribute("data-scroll-into-view")
+                ?.match(/salesProfile:\(([^)]+)\)/);
+              leadId = leadIdMatch ? leadIdMatch[1] : null;
+            }
+
+            if (leadId && nameElement) {
+              const fullText = nameElement.textContent?.trim();
+              const name = fullText
+                ?.replace("Add ", "")
+                .replace(" to selection", "");
+              const picture = pictureElement
+                ? (pictureElement as HTMLImageElement).src
+                : null;
+              const location = locationElement
+                ? locationElement.textContent?.trim()
+                : null;
+              const company = companyElement
+                ? companyElement.textContent?.trim()
+                : null;
+              const title = titleElement
+                ? titleElement.textContent?.trim()
+                : null;
+
+              return {
+                leadId: leadId || null,
+                name: name || null,
+                picture: picture || null,
+                linkedinUrl: urlElement
+                  ? (urlElement as HTMLAnchorElement).href
+                  : null,
+                title: title || null,
+                company: company || null,
+                location: location || null,
+              };
+            }
+
+            return null;
+          }, profileIndex);
+
+          if (leadData) {
+            currentResults.push(leadData);
+            sendConnectionsToClient(leadData);
+            console.log(`Scraped profile with leadId: ${leadData.leadId}`);
+          }
+        }
+
+        if (currentResults.length < 25) {
+          sendLogToClient(
+            `Only scraped ${currentResults.length} profiles, retrying...`
+          );
           console.log(
             `Retrying: ${retryCount}, profiles scraped: ${currentResults.length}`
           );
           retryCount++;
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
-      }
 
-      if (retryCount === maxRetries) {
-        sendLogToClient(`${maxRetries} retries: limit reached`);
-        console.log(
-          `Max retries (${maxRetries}) reached with ${currentResults.length} profiles scraped`
-        );
+        if (retryCount === maxRetries) {
+          sendLogToClient(
+            `Unable to scrape full 25 profiles after ${maxRetries} retries, moving to next page`
+          );
+          console.log(
+            `Max retries (${maxRetries}) reached with ${currentResults.length} profiles scraped, moving to next page`
+          );
+          break;
+        }
       }
 
       if (currentResults.length > 0) {
         console.log(
           `Adding ${currentResults.length} profiles to the results array`
         );
-
-        currentResults.forEach((lead: unknown) =>
-          sendConnectionsToClient(lead as Connection)
-        );
         results.push(...currentResults);
       }
 
       totalResults += currentResults.length;
-      sendLogToClient(`Total : ${totalResults}`);
-
-      if (currentResults.length < 23) {
-        sendLogToClient("Complete");
-        console.log(
-          "Fewer than 25 profiles found on this page. Scraping finished."
-        );
-        hasNextPage = false;
-        break;
-      }
+      console.log(`Total profiles so far: ${totalResults}`);
 
       try {
         await page.waitForSelector(
           "button.artdeco-pagination__button--next:not(:disabled)",
           { timeout: 2000 }
         );
+
         await page.click("button.artdeco-pagination__button--next", {
-          delay: 1000,
+          delay: 2000,
         });
+
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         console.log("Navigating to the next page...");
       } catch (error) {
-        sendLogToClient("Finished");
+        sendLogToClient("No more pages to navigate. Scraping completed");
         console.log("No more pages to navigate. Scraping finished.");
         hasNextPage = false;
       }
@@ -343,7 +447,7 @@ export async function POST(request: Request) {
     sendLogToClient("Scraping process completed");
     await browser.close();
     sendLogToClient("Browser closed");
-    console.log("results", results);
+
     return NextResponse.json({ content: results, profile: profile });
   } catch (error) {
     console.error("Error during scraping:", error);
