@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
-import chrome from "@sparticuz/chromium";
 
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
@@ -31,10 +30,14 @@ export async function POST(request: Request) {
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
-      args: chrome.args,
-      defaultViewport: chrome.defaultViewport,
-      executablePath: await chrome.executablePath(),
-      headless: chrome.headless,
+      headless: true,
+      slowMo: 20,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-renderer-backgrounding",
+      ],
+      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
     });
 
     const page = await browser.newPage();
