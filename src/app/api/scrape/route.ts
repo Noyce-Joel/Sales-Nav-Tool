@@ -26,7 +26,6 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-
   try {
     sendLogToClient("Launching browser");
     const browser = await puppeteer.launch({
