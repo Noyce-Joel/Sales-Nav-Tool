@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       executablePath:
         process.env.CHROME_EXECUTABLE_PATH ||
         (await chromium.executablePath(
-          "https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar"
+          "https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v126.0.0-pack.tar"
         )),
       headless: chromium.headless,
     });
