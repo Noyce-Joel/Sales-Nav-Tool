@@ -4,7 +4,9 @@ import puppeteer from "puppeteer";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
 import chromium from "@sparticuz/chromium-min";
+
 export const maxDuration = 300;
+
 chromium.setHeadlessMode = true;
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
