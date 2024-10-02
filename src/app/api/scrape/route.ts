@@ -331,7 +331,9 @@ export async function POST(request: Request) {
           "button.artdeco-pagination__button--next:not(:disabled)",
           { timeout: 2000 }
         );
-        await page.click("button.artdeco-pagination__button--next");
+        await page.click("button.artdeco-pagination__button--next", {
+          delay: 1500,
+        });
         console.log("Navigating to the next page...");
       } catch (error) {
         sendLogToClient("Finished");
