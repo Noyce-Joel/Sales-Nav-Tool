@@ -171,7 +171,11 @@ export default function LinkedInScraper() {
         }, 2000);
         setElapsedTime(0);
       } else {
+        // Handle HTTP errors
         setError(data.error || "Something went wrong");
+        const errorText = await response.text();
+        console.error("Server error:", errorText);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
     } catch (error) {
       setError((error as Error).message || "Something went wrong");

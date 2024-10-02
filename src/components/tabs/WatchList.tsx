@@ -67,7 +67,10 @@ export default function WatchList({
       });
 
       if (!response.ok) {
-        throw new Error("Error scraping recents");
+        // Handle HTTP errors
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const resultData = await response.json();
