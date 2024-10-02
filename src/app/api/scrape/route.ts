@@ -98,7 +98,6 @@ export async function POST(request: Request) {
 
       sendProfileName(profile);
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
     } catch (error) {
       console.error("Error fetching the profile name:", error);
     }
@@ -111,7 +110,7 @@ export async function POST(request: Request) {
 
     await page.click("a._bodyText_1e5nen");
 
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     await page.waitForSelector("form.overflow-y-auto", {
       visible: true,
@@ -144,9 +143,9 @@ export async function POST(request: Request) {
     if (location) {
       await page.type('input[placeholder="Add locations"]', location);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       await page.keyboard.press("ArrowDown");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       await page.keyboard.press("Enter");
     }
 
@@ -179,10 +178,8 @@ export async function POST(request: Request) {
         'input[placeholder="Add current companies and account lists"]',
         company
       );
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Enter");
     } else {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Escape");
     }
 
@@ -209,10 +206,10 @@ export async function POST(request: Request) {
 
     if (title) {
       await page.type('input[placeholder="Add current titles"]', title);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       await page.keyboard.press("Enter");
     } else {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       await page.keyboard.press("Escape");
     }
 
@@ -239,7 +236,6 @@ export async function POST(request: Request) {
       }
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const results: unknown[] = [];
 
@@ -258,7 +254,7 @@ export async function POST(request: Request) {
       let retryCount = 0;
       const maxRetries = 5;
 
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       while (currentResults.length < 23 && retryCount < maxRetries) {
         currentResults = await page.evaluate(() => {
@@ -296,7 +292,7 @@ export async function POST(request: Request) {
             `Retrying: ${retryCount}, profiles scraped: ${currentResults.length}`
           );
           retryCount++;
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
 
@@ -335,9 +331,7 @@ export async function POST(request: Request) {
           "button.artdeco-pagination__button--next:not(:disabled)",
           { timeout: 2000 }
         );
-        await page.click("button.artdeco-pagination__button--next", {
-          delay: 1000,
-        });
+        await page.click("button.artdeco-pagination__button--next");
         console.log("Navigating to the next page...");
       } catch (error) {
         sendLogToClient("Finished");

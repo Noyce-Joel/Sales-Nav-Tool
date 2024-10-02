@@ -6,7 +6,7 @@ import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
 import chromium from "@sparticuz/chromium-min";
 
-chromium.setHeadlessMode = true;
+
 
 const sendLogToClient = (message: string) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         (await chromium.executablePath(
           "https://github.com/Sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar"
         )),
-      headless: chromium.headless,
+      headless: false
     });
 
     const page = await browser.newPage();
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
     await page.click("a._bodyText_1e5nen");
 
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     await page.waitForSelector("form.overflow-y-auto", {
       visible: true,
@@ -145,12 +145,10 @@ export async function POST(request: Request) {
     if (data.location) {
       await page.type('input[placeholder="Add locations"]', data.location);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       await page.keyboard.press("ArrowDown");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Enter");
     } else {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Escape");
     }
 
@@ -184,12 +182,10 @@ export async function POST(request: Request) {
         'input[placeholder="Add current companies and account lists"]',
         data.company
       );
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Enter");
       sendLogToClient("Company added");
     } else {
       sendLogToClient("No company provided, skipping company filter");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       await page.keyboard.press("Escape");
     }
 
@@ -216,14 +212,13 @@ export async function POST(request: Request) {
 
     if (data.title) {
       await page.type('input[placeholder="Add current titles"]', data.title);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       await page.keyboard.press("Enter");
     } else {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       await page.keyboard.press("Escape");
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const existingConnections = new Set(
       data.connections.map((conn: { leadId: string }) => conn.leadId)
@@ -408,7 +403,7 @@ export async function POST(request: Request) {
             `Retrying: ${retryCount}, profiles scraped: ${currentResults.length}`
           );
           retryCount++;
-          await new Promise((resolve) => setTimeout(resolve, 500));
+
         }
 
         if (retryCount === maxRetries) {
@@ -438,11 +433,9 @@ export async function POST(request: Request) {
           { timeout: 2000 }
         );
 
-        await page.click("button.artdeco-pagination__button--next", {
-          delay: 2000,
-        });
+        await page.click("button.artdeco-pagination__button--next");
 
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         console.log("Navigating to the next page...");
       } catch (error) {
         sendLogToClient("No more pages to navigate. Scraping completed");
