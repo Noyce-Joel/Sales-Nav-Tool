@@ -40,16 +40,17 @@ export async function POST(request: Request) {
             ...chromium.args,
             "--hide-scrollbars",
             "--incognito",
-            "--no-sandbox"
+            "--no-sandbox",
           ],
       defaultViewport: chromium.defaultViewport,
       executablePath:
         process.env.CHROME_EXECUTABLE_PATH ||
         (await chromium.executablePath(
-          "https://connections.moonfire.s3.amazonaws.com/chromium-v126.0.0-pack.tar"
+          "https://s3.eu-north-1.amazonaws.com/connections.moonfire/chromium-v127.0.0-pack.tar"
         )),
       headless: chromium.headless,
     });
+    sendLogToClient("Browser launched");
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
