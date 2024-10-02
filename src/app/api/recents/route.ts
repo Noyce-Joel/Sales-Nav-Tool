@@ -19,7 +19,7 @@ const sendProfileName = (name: string) => {
 const sendConnectionsToClient = (connection: Connection) => {
   pusher.trigger("connections-channel", "connection", { connection });
 };
-
+export const maxDuration = 300;
 export async function POST(request: Request) {
   const { data, sessionCookie } = await request.json();
   console.log("profile data", data);
