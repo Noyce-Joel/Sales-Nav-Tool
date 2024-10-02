@@ -144,10 +144,10 @@ export async function POST(request: Request) {
 
     if (location) {
       await page.type('input[placeholder="Add locations"]', location);
-
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       await page.keyboard.press("ArrowDown");
-
+     
       await page.keyboard.press("Enter");
     }
 
@@ -180,6 +180,7 @@ export async function POST(request: Request) {
         'input[placeholder="Add current companies and account lists"]',
         company
       );
+      await new Promise((resolve) => setTimeout(resolve, 400));
       await page.keyboard.press("Enter");
     } else {
       await page.keyboard.press("Escape");
@@ -208,7 +209,7 @@ export async function POST(request: Request) {
 
     if (title) {
       await page.type('input[placeholder="Add current titles"]', title);
-
+      await new Promise((resolve) => setTimeout(resolve, 500));
       await page.keyboard.press("Enter");
     } else {
 
