@@ -42,7 +42,7 @@ export async function POST(request: Request) {
             "--hide-scrollbars",
             "--incognito",
             "--no-sandbox",
-            "--disable-setuid-sandbox",
+           
           ],
       defaultViewport: chromium.defaultViewport,
       executablePath:
