@@ -1,4 +1,4 @@
-# Recent Connections App
+# Sales Navigator Connections
 
 A tool that enables investors to view the latest connections made by their own first-degree connections on LinkedIn through Sales Navigator—providing valuable insights into network growth and potential opportunities. The app efficiently identifies new connections by comparing profile IDs, allowing proactive engagement with emerging startups and founders within your network.
 
