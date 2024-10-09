@@ -48,7 +48,7 @@ export default function Connections({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-foreground">
-          Connections {filteredProfiles.length}
+          Recent Connections {filteredProfiles.length}
         </h2>
         <div className="flex space-x-2">
           <div className="relative">

@@ -138,7 +138,7 @@ export default function LinkedInScraper() {
     setScrapedData([]);
 
     try {
-      const response = await fetch("/api/scrape", {
+      const response = await fetch("http://localhost:3001/scrape", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

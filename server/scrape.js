@@ -1,37 +1,51 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
-import pusher from "@/lib/pusherServer";
-import { Connection } from "@/lib/types";
-import chromium from "@sparticuz/chromium-min";
+/* eslint-disable @typescript-eslint/no-var-requires */
+// server.js
 
-export const maxDuration = 300;
+const express = require("express");
+const puppeteer = require("puppeteer");
+const chromium = require("@sparticuz/chromium-min");
+const Pusher = require("pusher"); // Adjust the path as needed
+const dotenv = require("dotenv");
+const cors = require("cors");
+dotenv.config();
 
+const app = express();
+const PORT = process.env.PORT || 3001;
+const pusher = new Pusher({
+  appId: "1782394",
+  key: "4fcccdcae4f122837dfa",
+  secret: "fd7d535960e5f61dab74",
+  cluster: "eu",
+  useTLS: true,
+});
+// Middleware to parse JSON bodies
+app.use(express.json());
+app.use(cors());
+// Set Chromium to headless mode
 chromium.setHeadlessMode = true;
-const sendLogToClient = (message: string) => {
+
+// Utility functions to send logs and data to clients via Pusher
+const sendLogToClient = (message) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
 };
 
-const sendProfileName = (name: string) => {
+const sendProfileName = (name) => {
   pusher.trigger("profile-name-channel", "name", { name });
 };
 
-const sendConnectionsToClient = (connection: Connection) => {
+const sendConnectionsToClient = (connection) => {
   pusher.trigger("connections-channel", "connection", { connection });
 };
 
-export async function POST(request: Request) {
-  const { profileUrl, location, company, sessionCookie, title } =
-    await request.json();
+// POST route for scraping
+app.post("/scrape", async (req, res) => {
+  const { profileUrl, location, company, sessionCookie, title } = await req.body;
 
   if (!profileUrl) {
-    return NextResponse.json(
-      { error: "Profile URL is required" },
-      { status: 400 }
-    );
+    return res.status(400).json({ error: "Profile URL is required" });
   }
 
-  const isLocal = !!process.env.CHROME_EXECUTABLE_PATH;
+  const isLocal = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
   try {
     sendLogToClient("Launching browser");
@@ -46,7 +60,7 @@ export async function POST(request: Request) {
           ],
       defaultViewport: chromium.defaultViewport,
       executablePath:
-        process.env.CHROME_EXECUTABLE_PATH ||
+        isLocal ||
         (await chromium.executablePath(
           "https://github.com/Sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar"
         )),
@@ -242,7 +256,7 @@ export async function POST(request: Request) {
     }
 
 
-    const results: unknown[] = [];
+    const results = [];
 
     sendLogToClient("Extracting leads");
 
@@ -255,7 +269,7 @@ export async function POST(request: Request) {
         timeout: 30000,
       });
 
-      let currentResults: unknown[] = [];
+      let currentResults = [];
       let retryCount = 0;
       const maxRetries = 5;
 
@@ -313,8 +327,8 @@ export async function POST(request: Request) {
           `Adding ${currentResults.length} profiles to the results array`
         );
 
-        currentResults.forEach((lead: unknown) =>
-          sendConnectionsToClient(lead as Connection)
+        currentResults.forEach((lead) =>
+          sendConnectionsToClient(lead)
         );
         results.push(...currentResults);
       }
@@ -322,6 +336,7 @@ export async function POST(request: Request) {
       totalResults += currentResults.length;
       sendLogToClient(`Total : ${totalResults}`);
       pageCount++;
+      console.log("pageCount", pageCount);
       if (currentResults.length < 23) {
         sendLogToClient("Complete");
         console.log(
@@ -353,13 +368,16 @@ export async function POST(request: Request) {
     await browser.close();
     sendLogToClient("Browser closed");
     console.log("results", results);
-    return NextResponse.json({ content: results, profile: profile });
+
+    return res.json({ content: results, profile });
   } catch (error) {
     console.error("Error during scraping:", error);
     sendLogToClient("An error occurred during scraping");
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return res.status(500).json({ error: error.message });
   }
-}
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

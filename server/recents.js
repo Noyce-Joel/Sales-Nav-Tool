@@ -1,34 +1,53 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { NextResponse } from "next/server";
-import puppeteer from "puppeteer-core";
-import pusher from "@/lib/pusherServer";
-import { Connection } from "@/lib/types";
-import chromium from "@sparticuz/chromium-min";
+/* eslint-disable @typescript-eslint/no-var-requires */
+// server.js
 
-const sendLogToClient = (message: string) => {
+const express = require("express");
+const puppeteer = require("puppeteer");
+const chromium = require("@sparticuz/chromium-min");
+const Pusher = require("pusher"); // Adjust the path as needed
+const dotenv = require("dotenv");
+const cors = require("cors");
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3002;
+const pusher = new Pusher({
+  appId: "1782394",
+  key: "4fcccdcae4f122837dfa",
+  secret: "fd7d535960e5f61dab74",
+  cluster: "eu",
+  useTLS: true,
+});
+// Middleware to parse JSON bodies
+app.use(express.json({ limit: '50mb' })); // Increase limit as needed
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cors());
+// Set Chromium to headless mode
+chromium.setHeadlessMode = true;
+
+// Utility functions to send logs and data to clients via Pusher
+const sendLogToClient = (message) => {
   pusher.trigger("scrape-channel", "scrape-log", { message });
 };
 
-const sendProfileName = (name: string) => {
+const sendProfileName = (name) => {
   pusher.trigger("profile-name-channel", "name", { name });
 };
 
-const sendConnectionsToClient = (connection: Connection) => {
+const sendConnectionsToClient = (connection) => {
   pusher.trigger("connections-channel", "connection", { connection });
 };
-export const maxDuration = 300;
-export async function POST(request: Request) {
-  const { data, sessionCookie } = await request.json();
-  console.log("profile data", data);
-  if (!data.url) {
-    return NextResponse.json(
-      { error: "Profile URL is required" },
-      { status: 400 }
-    );
+
+// POST route for scraping
+app.post("/recents", async (req, res) => {
+  const { data, sessionCookie } = await req.body;
+
+  if (!data) {
+    return res.status(400).json({ error: "Profile URL is required" });
   }
 
-  const isLocal = !!process.env.CHROME_EXECUTABLE_PATH;
+  const isLocal =
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
   try {
     sendLogToClient("Launching browser");
@@ -43,12 +62,13 @@ export async function POST(request: Request) {
           ],
       defaultViewport: chromium.defaultViewport,
       executablePath:
-        process.env.CHROME_EXECUTABLE_PATH ||
+       isLocal ||
         (await chromium.executablePath(
           "https://github.com/Sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar"
         )),
       headless: chromium.headless,
     });
+    sendLogToClient("Browser launched");
 
     const page = await browser.newPage();
     sendLogToClient("Directing to Sales Navigator");
@@ -217,16 +237,16 @@ export async function POST(request: Request) {
     }
 
     const existingConnections = new Set(
-      data.connections.map((conn: { leadId: string }) => conn.leadId)
+      data.connections.map((conn) => conn.leadId)
     );
 
-    const results: unknown[] = [];
+    const results = [];
 
     sendLogToClient("Extracting leads");
 
     let hasNextPage = true;
     let totalResults = 0;
-    let pageCount = 1
+    let pageCount = 1;
     while (hasNextPage) {
       const noLeads = await page.evaluate(() => {
         const noLeadsMessage = document.querySelector(
@@ -250,10 +270,10 @@ export async function POST(request: Request) {
         timeout: 30000,
       });
 
-      const currentResults: any[] = [];
+      const currentResults = [];
       let itemCount = 0;
       let retryCount = 0;
-      const maxRetries = 3;
+      const maxRetries = 5;
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const allLeadIds = await page.evaluate(() => {
@@ -355,9 +375,7 @@ export async function POST(request: Request) {
               const name = fullText
                 ?.replace("Add ", "")
                 .replace(" to selection", "");
-              const picture = pictureElement
-                ? (pictureElement as HTMLImageElement).src
-                : null;
+              const picture = pictureElement ? pictureElement.src : null;
               const location = locationElement
                 ? locationElement.textContent?.trim()
                 : null;
@@ -371,9 +389,7 @@ export async function POST(request: Request) {
               return {
                 name: name || null,
                 picture: picture || null,
-                linkedinUrl: urlElement
-                  ? (urlElement as HTMLAnchorElement).href
-                  : null,
+                linkedinUrl: urlElement ? urlElement.href : null,
                 leadId: leadId || null,
                 title: title || null,
                 company: company || null,
@@ -446,13 +462,15 @@ export async function POST(request: Request) {
     await browser.close();
     sendLogToClient("Browser closed");
     console.log("results", results);
-    return NextResponse.json({ content: results, profile: profile });
+    return res.json({ content: results, profile: profile });
   } catch (error) {
     console.error("Error during scraping:", error);
     sendLogToClient("An error occurred during scraping");
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return res.status(500).json({ error: error.message });
   }
-}
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

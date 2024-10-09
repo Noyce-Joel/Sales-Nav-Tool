@@ -45,6 +45,7 @@ async function addRecentsToDatabase(
     } = {
       id: profileId,
       recents: recents,
+      
     };
 
     console.log("Sending update to server:", updateData);
