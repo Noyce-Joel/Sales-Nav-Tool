@@ -58,7 +58,7 @@ export default function WatchList({
 
     try {
       console.log("Profile data being sent:", data, sessionCookie);
-      const response = await fetch("http://localhost:3002/recents", {
+      const response = await fetch("http://localhost:3000/api/recents", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

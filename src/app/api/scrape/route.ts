@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         (await chromium.executablePath(
           "https://github.com/Sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar"
         )),
-      headless: chromium.headless,
+      headless: chromium.setHeadlessMode,
     });
     sendLogToClient("Browser launched");
 
@@ -99,7 +99,6 @@ export async function POST(request: Request) {
       sendLogToClient(`Profile: ${profile}`);
 
       sendProfileName(profile);
-
     } catch (error) {
       console.error("Error fetching the profile name:", error);
     }
@@ -214,7 +213,6 @@ export async function POST(request: Request) {
       await page.keyboard.press("Enter");
       await new Promise((resolve) => setTimeout(resolve, 500));
     } else {
-
       await page.keyboard.press("Escape");
     }
 
@@ -240,7 +238,6 @@ export async function POST(request: Request) {
         console.error("An unknown error occurred");
       }
     }
-
 
     const results: unknown[] = [];
 
