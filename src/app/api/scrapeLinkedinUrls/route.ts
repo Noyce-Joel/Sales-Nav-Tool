@@ -17,12 +17,8 @@ const sendProfileName = (name: string) => {
   pusher.trigger("profile-name-channel", "name", { name });
 };
 
-const sendConnectionsToClient = (connection: Connection) => {
-  pusher.trigger("connections-channel", "connection", { connection });
-};
-
 export async function POST(request: Request) {
-  const { profileUrl, location, company, sessionCookie, title } =
+  const { profileUrl, sessionCookie } =
     await request.json();
 
   if (!profileUrl) {
