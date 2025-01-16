@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
@@ -280,12 +281,17 @@ export async function POST(request: Request) {
               }
 
               if (leadId) {
-                return { leadId }; // Return the leadId object instead of null
+                console.log(`Found leadId: ${leadId}`);
+                return { leadId };
               } else {
                 return null;
               }
             })
-            .filter((result) => result !== null); // Filter out any null results
+            .filter((result) => result !== null);
+        });
+
+        currentResults.forEach((result: any) => {
+          sendLogToClient(`Extracted leadId: ${result.leadId}`);
         });
 
         if (currentResults.length < 23) {
