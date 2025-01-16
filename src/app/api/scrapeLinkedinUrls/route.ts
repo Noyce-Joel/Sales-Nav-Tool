@@ -5,7 +5,6 @@ import puppeteer from "puppeteer";
 import pusher from "@/lib/pusherServer";
 import { Connection } from "@/lib/types";
 import chromium from "@sparticuz/chromium-min";
-import { scrapeSalesNavigator } from "@/lib/utils/scrapeSalesNavigator";
 
 export const maxDuration = 300;
 
